@@ -21,3 +21,20 @@ Indices and tables
 * :ref:`search`
 
 Hello world.
+
+.. code-block:: js
+
+    #!js
+    alert('hi');
+
+
+.. code-block:: c
+
+    //!c
+    int a = 1;
+
+    int fun(int a, int b)
+    {
+        return a + b;
+    }
+
