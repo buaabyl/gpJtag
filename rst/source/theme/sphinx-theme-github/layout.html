@@ -1,0 +1,61 @@
+{% extends "basic/layout.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+   <link rel="stylesheet" type="text/css" media="screen" href="_static/stylesheet.css">
+{% endblock %}
+
+{% block header %}
+  {{ super() }}
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+		<style type="text/css">
+		header a {
+			color:#FFFFFF;
+			text-decoration: none
+		}
+		header a:hover {
+			color:#FFFFFF;
+			text-decoration: none
+		}
+		</style>
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/buaabyl/gpJtag">View on GitHub</a>		  
+          <h1 id="project_title"><a href="index.html" title="Go back to home page">{{project}}</a></h1>
+          <h2 id="project_tagline"><a href="index.html" title="Go back to home page">{{theme_description}}</a></h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/{{ theme_username }}/{{project}}/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/{{ theme_username }}/{{project}}/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+{% endblock %}
+
+{%- block document %}
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+            {% block body %}
+            {% endblock %}
+      </section>
+    </div>
+{%- endblock %}
+
+{% block footer %}
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">{{project}} maintained by <a href="https://github.com/{{ theme_username }}">{{ theme_username }}</a></p>
+		<p>Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+        Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+{% endblock %}
+
+{# do not display relbars #}
+<!-- Let all relbar and sidbar to be empty -->
+{% block relbar1 %}{% endblock %}
+{% block relbar2 %}{% endblock %}
+{% block sidebar1 %}{% endblock %}
+{% block sidebar2 %}{% endblock %}
