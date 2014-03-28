@@ -80,7 +80,8 @@ TAP状态切换图
 
 以下只是为了说明在各个状态下，收到TCK后的行为，并不是实际的代码。
 
-*Select-DR-Scan*
+Select-DR-Scan
+##############
 
 .. code-block:: verilog
 
@@ -94,7 +95,8 @@ TAP状态切换图
     end
 
 
-*Capture-DR*
+Capture-DR
+##########
 
 .. code-block:: verilog
 
@@ -110,7 +112,8 @@ TAP状态切换图
 可以看到当从Capture-DR跳转到Shift-DR后，TDO已经是有效的了，但是TDI并没有移入。
 只有在Shift-DR的状态给出TCK上升沿才能移入TDI数据。
 
-*Shift-DR*
+Shift-DR
+########
 
 .. code-block:: verilog
 
@@ -127,13 +130,15 @@ TAP状态切换图
 所以在处理的时候需要特别的注意。一般如果DR有N位，那么前N-1位保持TMS为0，
 在最后一次需要把TMS置1。我最开始的时候就是没有注意这部分，导致移位总错。
 
-*Pause-DR*
+Pause-DR
+########
 
 这个用途看起来没有用，其实还是可以好好用的，比如用SPI实现Jtag的时序，
 如果那个SPI只能配置成8或16位，那么移位数据的时候一定是8的倍数的TCK上升沿，
 在Pause-DR状态停留几次就可以保证不会有错误的状态跳转了。
 
-*Update-DR*
+Update-DR
+#########
 
 .. code-block:: verilog
 
