@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Jtag简介 &mdash; gpJtag alpha documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'alpha',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="gpJtag alpha documentation" href="index.html" />
+    <link rel="up" title="GPJtag’s 文档" href="index_chs.html" />
+    <link rel="next" title="Testing..." href="test.html" />
+    <link rel="prev" title="GPJtag’s 文档" href="index_chs.html" />
+   
+   <link rel="stylesheet" type="text/css" media="screen" href="_static/stylesheet.css">
+
+  </head>
+  <body>
+  
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+		<style type="text/css">
+		header a {
+			color:#FFFFFF;
+			text-decoration: none
+		}
+		header a:hover {
+			color:#FFFFFF;
+			text-decoration: none
+		}
+		</style>
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/buaabyl/gpJtag">View on GitHub</a>		  
+          <h1 id="project_title"><a href="index.html" title="Go back to home page">gpJtag</a></h1>
+          <h2 id="project_tagline"><a href="index.html" title="Go back to home page">General Purpose Jtag</a></h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/buaabyl/gpJtag/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/buaabyl/gpJtag/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+
+    <div class="document">
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+            
+  <div class="section" id="jtag">
+<h1>Jtag简介<a class="headerlink" href="#jtag" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<p>Jtag是Joint Test Action Group的缩写，简单来说就是“在线测试和边界扫描”。常见的ARM、CPLD、FPGA都带有Jtag接口，可以用于更新固件，测试IC的IO功能。</p>
+<div class="section" id="id1">
+<h2>Jtag接口<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Jtag一般包含4根线</p>
+<ul class="simple">
+<li>TCK（Test Clock）由调试器给到设备的测试时钟</li>
+<li>TMS（Test Mode State）由调试器给到设备的信号，用于切换TAP的状态</li>
+<li>TDI（Test Data Input）对于被测设备是数据输入，对于调试器是数据输出</li>
+<li>TDO（Test Data Output）对于被测设备是数据输出，对于调试器是数据输出</li>
+</ul>
+<p>Jtag常见的用途是在线调试、固件下载。虽然标准中只规定了4线：TCK、TDI、TDO、TMS。</p>
+<img alt="_images/jtag_hardware_look.jpg" src="_images/jtag_hardware_look.jpg" />
+<p>但是不同的厂家的接口线序不一样，而且TAP状态机的寄存器位数也不一样，
+这直接导致各个下载线不兼容，每个开发板上ARM、FPGA的接口都不一样，而且每家的FPGA也不兼容。</p>
+<p>这个是ulink的各种常见的接口定义</p>
+<img alt="_images/ulink2_connector_20_16_14_10pin.png" src="_images/ulink2_connector_20_16_14_10pin.png" />
+<p>这个是xilinx的接口定义</p>
+<img alt="_images/xilinx_connector_14_10pin.png" src="_images/xilinx_connector_14_10pin.png" />
+<p>本文档会优先完成CPLD的Jtag配置，然后再实现ARM的调试下载功能。</p>
+</div>
+<div class="section" id="xc9500xl">
+<h2>XC9500XL的实现<a class="headerlink" href="#xc9500xl" title="Permalink to this headline">¶</a></h2>
+<p>让我们来看看Xilinx的xc9500xl。
+这块CPLD的Jtag实现了一个TAP状态机和3个主要的寄存器：</p>
+<ul class="simple">
+<li>IR（Instruction Register）</li>
+<li>DR（Data Register）</li>
+<li>BSC（Boundary Scan Chain）</li>
+</ul>
+<img alt="_images/xc9500xl_jtag_internal.png" src="_images/xc9500xl_jtag_internal.png" />
+<p>从图中看到TCK和TMS是给到TAP状态机的，可以在TCK的上升沿根据不同的TMS电平切换状态。</p>
+<p>IR和DR是寄存器，BSC是连接到边界IO的。</p>
+<p>具体到IO扫描的实现是这样的</p>
+<img alt="_images/xc9500xl_bsc.png" src="_images/xc9500xl_bsc.png" />
+<p>先分析IO输入信号。IOB.I是从IO给到内部逻辑的，当INTEST有效的时候，
+最右边的多路选择器会使用内部的锁存器，而不是真实的外部信号。</p>
+<p>当SHIFT/CAPTURE有效的时候，左边的三个3-1多路选通器会选中1x端，
+这样D触发器就级联成多位锁存器，当TCK给个上升沿的时候，
+TDI会从最上端给进来，数据移动一位，延迟一段很短的时间后TDO会被更新。</p>
+<p>当使用EXTEST就是外部测试的时候，IOB.O会替换“输出D触发器”的值。
+而且当IOB.T有效的时候，测试信号IOB.O会真正的给到PAD。
+只有当UPDATE信号有效的时候，TCK上升沿会将触发器的数据更新到右侧。</p>
+<p>xc9500xl文档里规定的Jtag时序是这样的</p>
+<img alt="_images/xc9500xl_JTAG_TIMING.png" src="_images/xc9500xl_JTAG_TIMING.png" />
+<p>从xc9500xl的时序可以看到时钟最高为10Mhz，TMS的建立时间“TMSS”为10ns。
+TMS的保持时间“TMSH”为10ns。TDI的建立和保持时间分别是15ns和25ns。
+TDO的延迟为35ns。</p>
+</div>
+<div class="section" id="tap">
+<h2>TAP状态机<a class="headerlink" href="#tap" title="Permalink to this headline">¶</a></h2>
+<p>TAP状态机只和TCK、TMS有关。一般在TCK的下降沿更新TMS、TDI的电平，在TCK的上升沿采样TDO的电平，这样保证建立保持时间是符合要求的，数据是稳定的。</p>
+<p>TAP状态切换图</p>
+<img alt="_images/jtagFSM.png" src="_images/jtagFSM.png" />
+<p>可以看到一般情况下TMS为高的时候会切换状态，TMS为低的时候是保持，而Test-Logic-Reset是在TMS为高的时候保持。这么设计的目的是，如果不知道当前的状态，那么拉高TMS，持续5个TCK时钟就一定可以跳转到Test-Logic-Reset状态（仔细看看状态跳转图）。</p>
+<p>以下只是为了说明在各个状态下，收到TCK后的行为，并不是实际的代码。</p>
+<div class="section" id="select-dr-scan">
+<h3>Select-DR-Scan<a class="headerlink" href="#select-dr-scan" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">tap</span> <span class="o">==</span> <span class="no">SELECT_DR_SCAN</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="no">TMS</span><span class="p">)</span>
+        <span class="n">addr_reg</span> <span class="o">&lt;=</span> <span class="no">ADDR_DR</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="n">addr_reg</span> <span class="o">&lt;=</span> <span class="n">addr_reg</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="capture-dr">
+<h3>Capture-DR<a class="headerlink" href="#capture-dr" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">tap</span> <span class="o">==</span> <span class="no">CAPTURE_DR</span><span class="p">)</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">odata_dr</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">r_dr</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+<p>可以看到当从Capture-DR跳转到Shift-DR后，TDO已经是有效的了，但是TDI并没有移入。
+只有在Shift-DR的状态给出TCK上升沿才能移入TDI数据。</p>
+</div>
+<div class="section" id="shift-dr">
+<h3>Shift-DR<a class="headerlink" href="#shift-dr" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">tap</span> <span class="o">==</span> <span class="no">SHIFT_DR</span><span class="p">)</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="p">{</span><span class="n">r_dr</span><span class="p">,</span> <span class="no">TDI</span><span class="p">};</span>
+    <span class="k">else</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">r_dr</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+<p>需要注意的是最后从Shift-DR跳转到Exit1-DR的时候DR寄存器还是会移入一位TDI，
+所以在处理的时候需要特别的注意。一般如果DR有N位，那么前N-1位保持TMS为0，
+在最后一次需要把TMS置1。我最开始的时候就是没有注意这部分，导致移位总错。</p>
+</div>
+<div class="section" id="pause-dr">
+<h3>Pause-DR<a class="headerlink" href="#pause-dr" title="Permalink to this headline">¶</a></h3>
+<p>这个用途看起来没有用，其实还是可以好好用的，比如用SPI实现Jtag的时序，
+如果那个SPI只能配置成8或16位，那么移位数据的时候一定是8的倍数的TCK上升沿，
+在Pause-DR状态停留几次就可以保证不会有错误的状态跳转了。</p>
+</div>
+<div class="section" id="update-dr">
+<h3>Update-DR<a class="headerlink" href="#update-dr" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">tap</span> <span class="o">==</span> <span class="no">UPDATE_DR</span><span class="p">)</span>
+        <span class="n">io</span> <span class="o">&lt;=</span> <span class="n">dr</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="n">io</span> <span class="o">&lt;=</span> <span class="n">io</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+<p>IR的实现是类似的。</p>
+</div>
+</div>
+</div>
+
+
+      </section>
+    </div>
+      <div class="clearer"></div>
+    </div>
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">gpJtag maintained by <a href="https://github.com/buaabyl">buaabyl</a></p>
+		<p>Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+        Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+  </body>
+</html>
