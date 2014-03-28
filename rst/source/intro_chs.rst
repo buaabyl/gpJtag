@@ -1,4 +1,9 @@
-Jtag简介
+< 
+:doc:`主页<index>` /
+:doc:`目录<index_chs>` /
+>
+
+简介
 ========
 
 Jtag是Joint Test Action Group的缩写，简单来说就是“在线测试和边界扫描”。常见的ARM、CPLD、FPGA都带有Jtag接口，可以用于更新固件，测试IC的IO功能。

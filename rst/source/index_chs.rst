@@ -3,13 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-GPJtag's 文档
+<
+:doc:`主页<index>` /
+>
+
+中文版
 ==================================
 
 目录:
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     intro_chs
 

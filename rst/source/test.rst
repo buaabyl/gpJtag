@@ -1,6 +1,26 @@
 Testing...
 ==================================
 
+Hello world.
+
+.. code-block:: js
+
+    #!js
+    alert('hi');
+
+hi
+
+.. code-block:: c
+
+    //!c
+    int a = 1;
+
+    int fun(int a, int b)
+    {
+        return a + b;
+    }
+
+
 still hello world!
 
 *italics*, **bold**

@@ -53,6 +53,17 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+	@echo Publish to top directory...
+	@rm -rf ../_images
+	@rm -rf ../_static
+	@rm -rf ../*.html
+	@cp -r build/html/_images ..
+	@cp -r build/html/_static ..
+	@cp -r build/html/*.html ..
+	@rm -f ../genindex.html
+	@rm -f ../search.html
+	@echo Done
+
 #cp $(BUILDDIR)/html/* .. -r
 
 dirhtml:
