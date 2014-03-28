@@ -3,33 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to GPJtag's documentation!
+GPJtag's 文档
 ==================================
 
-Contents:
+目录:
 
 .. toctree::
     :maxdepth: 1
 
-    index_chs
-
-    test
-
-Hello world.
-
-.. code-block:: js
-
-    #!js
-    alert('hi');
-
-
-.. code-block:: c
-
-    //!c
-    int a = 1;
-
-    int fun(int a, int b)
-    {
-        return a + b;
-    }
+    intro_chs
 
