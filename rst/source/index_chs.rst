@@ -16,4 +16,6 @@
     :maxdepth: 2
 
     intro_chs
+    cpld_chs
+
 

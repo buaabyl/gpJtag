@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CPLD内部结构 &mdash; gpJtag alpha documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'alpha',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="gpJtag alpha documentation" href="index.html" />
+    <link rel="up" title="中文版" href="index_chs.html" />
+    <link rel="next" title="English Version" href="index_enu.html" />
+    <link rel="prev" title="简介" href="intro_chs.html" />
+   
+   <link rel="stylesheet" type="text/css" media="screen" href="_static/stylesheet.css">
+
+  </head>
+  <body>
+  
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+		<style type="text/css">
+		header a {
+			color:#FFFFFF;
+			text-decoration: none
+		}
+		header a:hover {
+			color:#FFFFFF;
+			text-decoration: none
+		}
+		</style>
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/buaabyl/gpJtag">View on GitHub</a>		  
+          <h1 id="project_title"><a href="index.html" title="Go back to home page">gpJtag</a></h1>
+          <h2 id="project_tagline"><a href="index.html" title="Go back to home page">General Purpose Jtag</a></h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/buaabyl/gpJtag/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/buaabyl/gpJtag/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+
+    <div class="document">
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+            
+  <p>&lt;
+<a class="reference internal" href="index.html"><em>主页</em></a> /
+<a class="reference internal" href="index_chs.html"><em>目录</em></a> /
+&gt;</p>
+<div class="section" id="cpld">
+<h1>CPLD内部结构<a class="headerlink" href="#cpld" title="Permalink to this headline">¶</a></h1>
+<p>前面简单介绍了一下XC9500XL的Jtag结构，为了方便后续的CPLD在线配置，
+有必要了解CPLD的内部实现机制。因为Xilinx并没有完全公开内部的实现，
+所以以下的结构有部分是猜测。</p>
+<p>我们来看看最新的CoolRunner-II系列。</p>
+<p>这个是整体的系统结构图 <a class="footnote-reference" href="#f1" id="id1">[1]</a> :</p>
+<img alt="_images/coolrunner_II_architecture.png" src="_images/coolrunner_II_architecture.png" />
+<p>可以看到有这么几大块：</p>
+<ul class="simple">
+<li>BSC and ISP 是调试和在线配置模块</li>
+<li>I/O Blocks 是IO模块</li>
+<li>FBs 是Function Blocks（功能模块），其中包含两个子模块：<ul>
+<li>MC1到MC16 是16个Macrocell（宏单元），包含触发器和一些基本的门</li>
+<li>PLA 是Programable Logic Array（就是以前常说的乘积项整列），用于实现AND逻辑，并给出可组合的OR逻辑整列</li>
+</ul>
+</li>
+<li>AIM 全称Advanced Interconnect Matrix（高级互联矩阵），用于各个Function Blocks的互联</li>
+</ul>
+<div class="section" id="fbs">
+<h2>FBs<a class="headerlink" href="#fbs" title="Permalink to this headline">¶</a></h2>
+<p>FB是CPLD可编程的基础，从AIM给到PLA的信号有40路，每一路信号在内部使用的时候做了预处理，
+包含原始信号和反向信号，这样可以很方便的使用信号。
+虽然这种设计看似多了很多反相器，比较浪费，但这么一来就没必要用单独的Macrocell来做反向了。
+其实资源利用率还是很高的。</p>
+<img alt="_images/coolrunner_II_FBs.png" src="_images/coolrunner_II_FBs.png" />
+</div>
+<div class="section" id="pla">
+<h2>PLA<a class="headerlink" href="#pla" title="Permalink to this headline">¶</a></h2>
+<p>PLA生成的乘积项会通过“线或”整列给到Macrocell。
+看看PLA和一个宏单元的内部，红框是PLA，其它部分是Macrocell。
+每个FB的PLA可以给出的信号共有56路（可以用作PTA、PTB、PTC或CTC、CTR、CTS、CTE）。</p>
+<img alt="_images/coolrunner_II_PLA.png" src="_images/coolrunner_II_PLA.png" />
+<p>从Xilinx的技术介绍里可以找到这幅图 <a class="footnote-reference" href="#f2" id="id2">[2]</a></p>
+<img alt="_images/coolrunner_II_PLA_detail.png" src="_images/coolrunner_II_PLA_detail.png" />
+<p>从AIM给的信号有A、B、C，红点是配置成短路，X是断路。
+这幅图为了便于说明可编程节点的功能，省掉了一些细节。
+表达式 Y = A&amp;B|C，X = A&amp;B|!C，这里的X、Y可以是给到Macrocell的信号。
+由于这里可以服用A&amp;B的结果，所以节约了资源。</p>
+<p>这里附上以前的旧器件PAL就容易理解了 <a class="footnote-reference" href="#f3" id="id3">[3]</a> ：</p>
+<img alt="_images/PAL.png" src="_images/PAL.png" />
+<p>只要接触过三极管的集电极开路（OC）、场效应管漏极开路（OD）实现的线与、线或逻辑
+就容易理解上面这些“可编程节点”。
+两个OC门并联、并添加上拉电阻就可以实现“线与”的功能，
+“线或”可以在“线与”的基础上添加反相器得到。</p>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>ds090 : CoolRunner-II CPLD Family, page 4</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>xilinx CoolRunner-II Technology &amp; Architecture, page 22</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>Architecture of FPGAs and CPLDs: A Tutorial, page 5</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+      </section>
+    </div>
+      <div class="clearer"></div>
+    </div>
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">gpJtag maintained by <a href="https://github.com/buaabyl">buaabyl</a></p>
+		<p>Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+        Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+  </body>
+</html>
