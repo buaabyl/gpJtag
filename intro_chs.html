@@ -89,111 +89,11 @@
 <img alt="_images/xilinx_connector_14_10pin.png" src="_images/xilinx_connector_14_10pin.png" />
 <p>本文档会优先完成CPLD的Jtag配置，然后再实现ARM的调试下载功能。</p>
 </div>
-<div class="section" id="xc9500xl">
-<h2>XC9500XL的实现<a class="headerlink" href="#xc9500xl" title="Permalink to this headline">¶</a></h2>
-<p>让我们来看看Xilinx的xc9500xl。
-这块CPLD的Jtag实现了一个TAP状态机和3个主要的寄存器：</p>
-<ul class="simple">
-<li>IR（Instruction Register）</li>
-<li>DR（Data Register）</li>
-<li>BSC（Boundary Scan Chain）</li>
-</ul>
-<img alt="_images/xc9500xl_jtag_internal.png" src="_images/xc9500xl_jtag_internal.png" />
-<p>从图中看到TCK和TMS是给到TAP状态机的，可以在TCK的上升沿根据不同的TMS电平切换状态。</p>
-<p>IR和DR是寄存器，BSC是连接到边界IO的。</p>
-<p>具体到IO扫描的实现是这样的</p>
-<img alt="_images/xc9500xl_bsc.png" src="_images/xc9500xl_bsc.png" />
-<p>先分析IO输入信号。IOB.I是从IO给到内部逻辑的，当INTEST有效的时候，
-最右边的多路选择器会使用内部的锁存器，而不是真实的外部信号。</p>
-<p>当SHIFT/CAPTURE有效的时候，左边的三个3-1多路选通器会选中1x端，
-这样D触发器就级联成多位锁存器，当TCK给个上升沿的时候，
-TDI会从最上端给进来，数据移动一位，延迟一段很短的时间后TDO会被更新。</p>
-<p>当使用EXTEST就是外部测试的时候，IOB.O会替换“输出D触发器”的值。
-而且当IOB.T有效的时候，测试信号IOB.O会真正的给到PAD。
-只有当UPDATE信号有效的时候，TCK上升沿会将触发器的数据更新到右侧。</p>
-<p>xc9500xl文档里规定的Jtag时序是这样的</p>
-<img alt="_images/xc9500xl_JTAG_TIMING.png" src="_images/xc9500xl_JTAG_TIMING.png" />
-<p>从xc9500xl的时序可以看到时钟最高为10Mhz，TMS的建立时间“TMSS”为10ns。
-TMS的保持时间“TMSH”为10ns。TDI的建立和保持时间分别是15ns和25ns。
-TDO的延迟为35ns。</p>
-</div>
-<div class="section" id="tap">
-<h2>TAP状态机<a class="headerlink" href="#tap" title="Permalink to this headline">¶</a></h2>
-<p>TAP状态机只和TCK、TMS有关。一般在TCK的下降沿更新TMS、TDI的电平，在TCK的上升沿采样TDO的电平，这样保证建立保持时间是符合要求的，数据是稳定的。</p>
-<p>TAP状态切换图</p>
-<img alt="_images/jtagFSM.png" src="_images/jtagFSM.png" />
-<p>可以看到一般情况下TMS为高的时候会切换状态，TMS为低的时候是保持，而Test-Logic-Reset是在TMS为高的时候保持。这么设计的目的是，如果不知道当前的状态，那么拉高TMS，持续5个TCK时钟就一定可以跳转到Test-Logic-Reset状态（仔细看看状态跳转图）。</p>
-<p>以下只是为了说明在各个状态下，收到TCK后的行为，并不是实际的代码。</p>
-<div class="section" id="select-dr-scan">
-<h3>Select-DR-Scan<a class="headerlink" href="#select-dr-scan" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
-<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
-<span class="k">begin</span>
-    <span class="k">if</span> <span class="p">((</span><span class="n">tap</span> <span class="o">==</span> <span class="no">SELECT_DR_SCAN</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="no">TMS</span><span class="p">)</span>
-        <span class="n">addr_reg</span> <span class="o">&lt;=</span> <span class="no">ADDR_DR</span><span class="p">;</span>
-    <span class="k">else</span>
-        <span class="n">addr_reg</span> <span class="o">&lt;=</span> <span class="n">addr_reg</span><span class="p">;</span>
-<span class="k">end</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="capture-dr">
-<h3>Capture-DR<a class="headerlink" href="#capture-dr" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
-<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
-<span class="k">begin</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">tap</span> <span class="o">==</span> <span class="no">CAPTURE_DR</span><span class="p">)</span>
-        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">odata_dr</span><span class="p">;</span>
-    <span class="k">else</span>
-        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">r_dr</span><span class="p">;</span>
-<span class="k">end</span>
-</pre></div>
-</div>
-<p>可以看到当从Capture-DR跳转到Shift-DR后，TDO已经是有效的了，但是TDI并没有移入。
-只有在Shift-DR的状态给出TCK上升沿才能移入TDI数据。</p>
-</div>
-<div class="section" id="shift-dr">
-<h3>Shift-DR<a class="headerlink" href="#shift-dr" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
-<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
-<span class="k">begin</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">tap</span> <span class="o">==</span> <span class="no">SHIFT_DR</span><span class="p">)</span>
-        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="p">{</span><span class="n">r_dr</span><span class="p">,</span> <span class="no">TDI</span><span class="p">};</span>
-    <span class="k">else</span>
-        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">r_dr</span><span class="p">;</span>
-<span class="k">end</span>
-</pre></div>
-</div>
-<p>需要注意的是最后从Shift-DR跳转到Exit1-DR的时候DR寄存器还是会移入一位TDI，
-所以在处理的时候需要特别的注意。一般如果DR有N位，那么前N-1位保持TMS为0，
-在最后一次需要把TMS置1。我最开始的时候就是没有注意这部分，导致移位总错。</p>
-</div>
-<div class="section" id="pause-dr">
-<h3>Pause-DR<a class="headerlink" href="#pause-dr" title="Permalink to this headline">¶</a></h3>
-<p>这个用途看起来没有用，其实还是可以好好用的，比如用SPI实现Jtag的时序，
-如果那个SPI只能配置成8或16位，那么移位数据的时候一定是8的倍数的TCK上升沿，
-在Pause-DR状态停留几次就可以保证不会有错误的状态跳转了。</p>
-</div>
-<div class="section" id="update-dr">
-<h3>Update-DR<a class="headerlink" href="#update-dr" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
-<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
-<span class="k">begin</span>
-    <span class="k">if</span> <span class="p">((</span><span class="n">tap</span> <span class="o">==</span> <span class="no">UPDATE_DR</span><span class="p">)</span>
-        <span class="n">io</span> <span class="o">&lt;=</span> <span class="n">dr</span><span class="p">;</span>
-    <span class="k">else</span>
-        <span class="n">io</span> <span class="o">&lt;=</span> <span class="n">io</span><span class="p">;</span>
-<span class="k">end</span>
-</pre></div>
-</div>
-<p>IR的实现是类似的。</p>
-</div>
-</div>
 </div>
 
 
             <hr/>
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="_static/CC-BY-NC-ND-88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a><br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權.
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="_static/CC-BY-NC-ND-88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.<br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權.
       </section>
     </div>
       <div class="clearer"></div>

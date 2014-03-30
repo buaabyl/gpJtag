@@ -69,9 +69,59 @@
 &gt;</p>
 <div class="section" id="cpld">
 <h1>CPLD内部结构<a class="headerlink" href="#cpld" title="Permalink to this headline">¶</a></h1>
-<p>前面简单介绍了一下XC9500XL的Jtag结构，为了方便后续的CPLD在线配置，
-有必要了解CPLD的内部实现机制。因为Xilinx并没有完全公开内部的实现，
-所以以下的结构有部分是猜测。</p>
+<div class="section" id="xc9500xl">
+<h2>XC9500XL<a class="headerlink" href="#xc9500xl" title="Permalink to this headline">¶</a></h2>
+<p>XC9500XL属于xilinx上一代的CPLD，在新的设计中基本不会再用，
+但是提供的资料比较多，而且涉及到内部的实现，所以让我们先看看Xilinx的XC9500XL。</p>
+<img alt="_images/xc9500xl_architecture.png" src="_images/xc9500xl_architecture.png" />
+<p>这块CPLD的Jtag在核心的功能模块、快速连接矩阵、IO外还实现了一个Jtag接口，包含TAP状态机和ISP在线编程模块。</p>
+<p>TAP包含3个主要的寄存器：</p>
+<ul class="simple">
+<li>IR（Instruction Register）</li>
+<li>DR（Data Register）</li>
+<li>BSC（Boundary Scan Chain）</li>
+</ul>
+<p>我们再看看Jtag的设计：</p>
+<img alt="_images/xc9500xl_jtag_internal.png" src="_images/xc9500xl_jtag_internal.png" />
+<p>从图中看到TCK和TMS是给到TAP状态机的，IR和DR是寄存器，BSC是连接到边界IO的寄存器。</p>
+<div class="section" id="fbs">
+<h3>FBs<a class="headerlink" href="#fbs" title="Permalink to this headline">¶</a></h3>
+<p>每个Function Block包含18个宏单元。每个宏单元用18根线连到FastCONNECT矩阵，
+矩阵反馈3×18根线给功能模块。还有些线是ISP编程线、全局时钟线。</p>
+<img alt="_images/xc9500xl_FBs.png" src="_images/xc9500xl_FBs.png" />
+<p>看看细节，最左边是AND阵列（乘积项），“Product Term Allocator”可以自由的选择使用乘积项结果。</p>
+<img alt="_images/xc9500xl_FBs_detail.png" src="_images/xc9500xl_FBs_detail.png" />
+</div>
+<div class="section" id="pta">
+<h3>PTA<a class="headerlink" href="#pta" title="Permalink to this headline">¶</a></h3>
+<p>给出PTA的细节：</p>
+<img alt="_images/xc9500xl_pta.png" src="_images/xc9500xl_pta.png" />
+</div>
+<div class="section" id="fastconnect">
+<h3>FastConnect<a class="headerlink" href="#fastconnect" title="Permalink to this headline">¶</a></h3>
+<p>这样连线就好理解了：</p>
+<img alt="_images/xc9500xl_connect.png" src="_images/xc9500xl_connect.png" />
+</div>
+<div class="section" id="ios">
+<h3>IOs<a class="headerlink" href="#ios" title="Permalink to this headline">¶</a></h3>
+<p>IO扫描实现是这样的：</p>
+<img alt="_images/xc9500xl_bsc.png" src="_images/xc9500xl_bsc.png" />
+<p>我们先分析IO输入信号。IOB.I是从IO给到内部逻辑的，当INTEST有效的时候，
+最右边的多路选择器会使用内部的锁存器，而不是真实的外部信号。</p>
+<p>当SHIFT/CAPTURE有效的时候，左边的三个3-1多路选通器会选中1x端，
+这样D触发器就级联成多位锁存器，当TCK给个上升沿的时候，
+TDI会从最上端给进来，数据移动一位，延迟一段很短的时间后TDO会被更新。</p>
+<p>当使用EXTEST就是外部测试的时候，IOB.O会替换“输出D触发器”的值。
+而且当IOB.T有效的时候，测试信号IOB.O会真正的给到PAD。
+只有当UPDATE信号有效的时候，TCK上升沿会将触发器的数据更新到右侧。</p>
+</div>
+</div>
+<div class="section" id="coolrunner-ii">
+<h2>CoolRunner-II<a class="headerlink" href="#coolrunner-ii" title="Permalink to this headline">¶</a></h2>
+<p>前面简单介绍了一下XC9500XL的Jtag结构，鉴于XC9500XL系列属于淘汰的型号，
+并且手头只有CoolRunner-II的板子，为了方便后续的测试，
+有必要了解CoolRunner-II的内部实现机制。因为Xilinx并没有完全公开内部的实现，
+所以以下的结构有部分是猜测的。</p>
 <p>我们来看看最新的CoolRunner-II系列。</p>
 <p>这个是整体的系统结构图 <a class="footnote-reference" href="#f1" id="id1">[1]</a> :</p>
 <img alt="_images/coolrunner_II_architecture.png" src="_images/coolrunner_II_architecture.png" />
@@ -81,13 +131,13 @@
 <li>I/O Blocks 是IO模块</li>
 <li>FBs 是Function Blocks（功能模块），其中包含两个子模块：<ul>
 <li>MC1到MC16 是16个Macrocell（宏单元），包含触发器和一些基本的门</li>
-<li>PLA 是Programable Logic Array（就是以前常说的乘积项整列），用于实现AND逻辑，并给出可组合的OR逻辑整列</li>
+<li>PLA 是Programable Logic Array（就是以前常说的乘积项阵列），用于实现AND逻辑，并给出可组合的OR逻辑阵列</li>
 </ul>
 </li>
-<li>AIM 全称Advanced Interconnect Matrix（高级互联矩阵），用于各个Function Blocks的互联</li>
+<li>AIM 全称Advanced Interconnect Matrix（高级互联矩阵），用于FBs的互联</li>
 </ul>
-<div class="section" id="fbs">
-<h2>FBs<a class="headerlink" href="#fbs" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h3>FBs<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>FB是CPLD可编程的基础，从AIM给到PLA的信号有40路，每一路信号在内部使用的时候做了预处理，
 包含原始信号和反向信号，这样可以很方便的使用信号。
 虽然这种设计看似多了很多反相器，比较浪费，但这么一来就没必要用单独的Macrocell来做反向了。
@@ -95,48 +145,141 @@
 <img alt="_images/coolrunner_II_FBs.png" src="_images/coolrunner_II_FBs.png" />
 </div>
 <div class="section" id="pla">
-<h2>PLA<a class="headerlink" href="#pla" title="Permalink to this headline">¶</a></h2>
-<p>PLA生成的乘积项会通过“线或”整列给到Macrocell。
+<h3>PLA<a class="headerlink" href="#pla" title="Permalink to this headline">¶</a></h3>
+<p>PLA生成的乘积项会通过“线或”阵列给到Macrocell。
 看看PLA和一个宏单元的内部，红框是PLA，其它部分是Macrocell。
 每个FB的PLA可以给出的信号共有56路（可以用作PTA、PTB、PTC或CTC、CTR、CTS、CTE）。</p>
 <img alt="_images/coolrunner_II_PLA.png" src="_images/coolrunner_II_PLA.png" />
-<p>从Xilinx的技术介绍里可以找到这幅图 <a class="footnote-reference" href="#f2" id="id2">[2]</a></p>
+<p>Xilinx给出的使用例子，乘积项是可以复用的：</p>
+<img alt="_images/coolrunner_II_PLA_example.png" src="_images/coolrunner_II_PLA_example.png" />
+<p>从Xilinx的技术介绍里可以找到这幅图 <a class="footnote-reference" href="#f2" id="id3">[2]</a> 和 <a class="footnote-reference" href="#f3" id="id4">[3]</a></p>
+<img alt="_images/coolrunner_II_PLA_and_or_logic.png" src="_images/coolrunner_II_PLA_and_or_logic.png" />
 <img alt="_images/coolrunner_II_PLA_detail.png" src="_images/coolrunner_II_PLA_detail.png" />
 <p>从AIM给的信号有A、B、C，红点是配置成短路，X是断路。
 这幅图为了便于说明可编程节点的功能，省掉了一些细节。
 表达式 Y = A&amp;B|C，X = A&amp;B|!C，这里的X、Y可以是给到Macrocell的信号。
 由于这里可以服用A&amp;B的结果，所以节约了资源。</p>
-<p>这里附上以前的旧器件PAL就容易理解了 <a class="footnote-reference" href="#f3" id="id3">[3]</a> ：</p>
+<p>关于“可编程节点”的实现可以看看GAL、PAL的实现</p>
+<p>这里附上可编程器件PAL的细节 <a class="footnote-reference" href="#f4" id="id5">[4]</a> ：</p>
 <img alt="_images/PAL.png" src="_images/PAL.png" />
+<p>再看看Lattice的GAL16V8细节：</p>
+<img alt="_images/GAL16V8.png" src="_images/GAL16V8.png" />
 <p>只要接触过三极管的集电极开路（OC）、场效应管漏极开路（OD）实现的线与、线或逻辑
 就容易理解上面这些“可编程节点”。
 两个OC门并联、并添加上拉电阻就可以实现“线与”的功能，
 “线或”可以在“线与”的基础上添加反相器得到。</p>
+</div>
+</div>
+<div class="section" id="timing">
+<h2>Timing<a class="headerlink" href="#timing" title="Permalink to this headline">¶</a></h2>
+<p>XC9500XL文档里规定的Jtag时序是这样的</p>
+<img alt="_images/xc9500xl_JTAG_TIMING.png" src="_images/xc9500xl_JTAG_TIMING.png" />
+<p>从XC9500XL的时序可以看到时钟最高为10Mhz，TMS的建立时间“TMSS”为10ns。
+TMS的保持时间“TMSH”为10ns。TDI的建立和保持时间分别是15ns和25ns。
+TDO的延迟为35ns。</p>
+</div>
+<div class="section" id="tap">
+<h2>TAP<a class="headerlink" href="#tap" title="Permalink to this headline">¶</a></h2>
+<p>TAP状态机只和TCK、TMS有关。一般在TCK的下降沿更新TMS、TDI的电平，在TCK的上升沿采样TDO的电平，这样保证建立保持时间是符合要求的，数据是稳定的。</p>
+<p>TAP状态切换图</p>
+<img alt="_images/jtagFSM.png" src="_images/jtagFSM.png" />
+<p>可以看到一般情况下TMS为高的时候会切换状态，TMS为低的时候是保持，而Test-Logic-Reset是在TMS为高的时候保持。这么设计的目的是，如果不知道当前的状态，那么拉高TMS，持续5个TCK时钟就一定可以跳转到Test-Logic-Reset状态（仔细看看状态跳转图）。</p>
+<p>以下只是为了说明在各个状态下，收到TCK后的行为，并不是实际的代码。</p>
+<div class="section" id="select-dr-scan">
+<h3>Select-DR-Scan<a class="headerlink" href="#select-dr-scan" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">tap</span> <span class="o">==</span> <span class="no">SELECT_DR_SCAN</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="no">TMS</span><span class="p">)</span>
+        <span class="n">addr_reg</span> <span class="o">&lt;=</span> <span class="no">ADDR_DR</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="n">addr_reg</span> <span class="o">&lt;=</span> <span class="n">addr_reg</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="capture-dr">
+<h3>Capture-DR<a class="headerlink" href="#capture-dr" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">tap</span> <span class="o">==</span> <span class="no">CAPTURE_DR</span><span class="p">)</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">odata_dr</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">r_dr</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+<p>可以看到当从Capture-DR跳转到Shift-DR后，TDO已经是有效的了，但是TDI并没有移入。
+只有在Shift-DR的状态给出TCK上升沿才能移入TDI数据。</p>
+</div>
+<div class="section" id="shift-dr">
+<h3>Shift-DR<a class="headerlink" href="#shift-dr" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">tap</span> <span class="o">==</span> <span class="no">SHIFT_DR</span><span class="p">)</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="p">{</span><span class="n">r_dr</span><span class="p">,</span> <span class="no">TDI</span><span class="p">};</span>
+    <span class="k">else</span>
+        <span class="n">r_dr</span> <span class="o">&lt;=</span> <span class="n">r_dr</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+<p>需要注意的是最后从Shift-DR跳转到Exit1-DR的时候DR寄存器还是会移入一位TDI，
+所以在处理的时候需要特别的注意。一般如果DR有N位，那么前N-1位保持TMS为0，
+在最后一次需要把TMS置1。我最开始的时候就是没有注意这部分，导致移位总错。</p>
+</div>
+<div class="section" id="pause-dr">
+<h3>Pause-DR<a class="headerlink" href="#pause-dr" title="Permalink to this headline">¶</a></h3>
+<p>这个用途看起来没有用，其实还是可以好好用的，比如用SPI实现Jtag的时序，
+如果那个SPI只能配置成8或16位，那么移位数据的时候一定是8的倍数的TCK上升沿，
+在Pause-DR状态停留几次就可以保证不会有错误的状态跳转了。</p>
+</div>
+<div class="section" id="update-dr">
+<h3>Update-DR<a class="headerlink" href="#update-dr" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-verilog"><div class="highlight"><pre><span class="c1">//verilog</span>
+<span class="k">always</span><span class="p">@(</span><span class="k">posedge</span> <span class="no">TCK</span><span class="p">)</span>
+<span class="k">begin</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">tap</span> <span class="o">==</span> <span class="no">UPDATE_DR</span><span class="p">)</span>
+        <span class="n">io</span> <span class="o">&lt;=</span> <span class="n">dr</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="n">io</span> <span class="o">&lt;=</span> <span class="n">io</span><span class="p">;</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+<p>IR的实现是类似的。</p>
 <p class="rubric">Footnotes</p>
 <table class="docutils footnote" frame="void" id="f1" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>ds090 : CoolRunner-II CPLD Family, page 4</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>ds090 CoolRunner-II CPLD Family, page 4</td></tr>
 </tbody>
 </table>
 <table class="docutils footnote" frame="void" id="f2" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>xilinx CoolRunner-II Technology &amp; Architecture, page 22</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>xapp376 Understanding the CoolRunner-II Logic Engine, page 4</td></tr>
 </tbody>
 </table>
 <table class="docutils footnote" frame="void" id="f3" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>Architecture of FPGAs and CPLDs: A Tutorial, page 5</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id4">[3]</a></td><td>xapp444 CPLD Fitting, Tips and Tricks, page 2</td></tr>
 </tbody>
 </table>
+<table class="docutils footnote" frame="void" id="f4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[4]</a></td><td>Architecture of FPGAs and CPLDs: A Tutorial, page 5</td></tr>
+</tbody>
+</table>
+</div>
 </div>
 </div>
 
 
             <hr/>
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="_static/CC-BY-NC-ND-88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a><br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權.
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="_static/CC-BY-NC-ND-88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.<br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權.
       </section>
     </div>
       <div class="clearer"></div>
