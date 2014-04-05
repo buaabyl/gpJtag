@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>English Version &mdash; gpJtag alpha documentation</title>
+    <title>Preface &mdash; gpJtag alpha documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,8 +24,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="gpJtag alpha documentation" href="index.html" />
-    <link rel="next" title="Preface" href="intro_enu.html" />
-    <link rel="prev" title="CPLD内部结构" href="cpld_chs.html" />
+    <link rel="up" title="English Version" href="index_enu.html" />
+    <link rel="next" title="Testing..." href="test.html" />
+    <link rel="prev" title="English Version" href="index_enu.html" />
    
    <link rel="stylesheet" type="text/css" media="screen" href="_static/stylesheet.css">
 
@@ -64,17 +65,31 @@
             
   <p>&lt;
 <a class="reference internal" href="index.html"><em>Home</em></a> /
+<a class="reference internal" href="index_enu.html"><em>Contents</em></a> /
 &gt;</p>
-<div class="section" id="english-version">
-<h1>English Version<a class="headerlink" href="#english-version" title="Permalink to this headline">¶</a></h1>
-<p>Contents:</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_enu.html">Preface</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="intro_enu.html#jtag-interface">Jtag Interface</a></li>
+<div class="section" id="preface">
+<h1>Preface<a class="headerlink" href="#preface" title="Permalink to this headline">¶</a></h1>
+<p>Jtag is abbreviation of Joint Test Action Group. Most ICs have jtag interface, such like ARM, CPLD, FPGA. And we use Jtag to program new firmware or test IO.</p>
+<p>This book aim at design and implement a Jtag adapter. I have done a Jtag adapter for special device. But It is waste of time build Jtag adapter for every hardware project. So I want to make it to be General Purpose:) As I know OpenOCD is best tool for this purpose, but It aim at use jtag, not build a jtag tool. The code is very large and difficute for hardware engineer, by the way, easier for software engineer.</p>
+<p>If you want a Jtag adapter, it is not so difficute, but If you want newbee to known Jtag and modify a Jtag adapter for some special need, it is really hard. Because Jtag is mostly hardware tool. And I will introduct and explain some tech of Jtag and then we build a Jtag adapter.</p>
+<p>I thinking the better way is introduct CPLD, cause using CPLD and FPGA for a long time. The second reason is CPLD is easier than FPGA and ARM. An a project to config CPLD is completion work, and not so difficute. So I decided to do so.</p>
+<p>And the reason I choose xilinx&#8217;s cpld, is I have used xilinx device only, and then datasheet of xilinx is more publicly.</p>
+<div class="section" id="jtag-interface">
+<h2>Jtag Interface<a class="headerlink" href="#jtag-interface" title="Permalink to this headline">¶</a></h2>
+<p>Normaly Jtag have 4-wires</p>
+<ul class="simple">
+<li>TCK(Test Clock) test clock from adapter to device.</li>
+<li>TMS(Test Mode State) from adapter to device, to change TAP state.</li>
+<li>TDI(Test Data Input) input pin for device, output pin for adapter.</li>
+<li>TDO(Test Data Output) output pin for device, input pin for adapter.</li>
 </ul>
-</li>
-</ul>
+<p>Though Jtag only have 4-wires, but different between vendor.</p>
+<img alt="_images/jtag_hardware_look.jpg" src="_images/jtag_hardware_look.jpg" />
+<p>There are difference pinout for difference vendor. The width of register is difference by the way. So we see many jtag connector on board for ARM, FPGA, and son on.</p>
+<p>This is arm ulink connector</p>
+<img alt="_images/ulink2_connector_20_16_14_10pin.png" src="_images/ulink2_connector_20_16_14_10pin.png" />
+<p>This is xlinx jtag connector</p>
+<img alt="_images/xilinx_connector_14_10pin.png" src="_images/xilinx_connector_14_10pin.png" />
 </div>
 </div>
 
