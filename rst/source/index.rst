@@ -7,11 +7,11 @@ Welcome to GPJtag's documentation!
 ==================================
 
 .. toctree::
-    :maxdepth: 1
-
-    test
+    :maxdepth: 2
 
     index_chs
     index_enu
+
+    test
 
 

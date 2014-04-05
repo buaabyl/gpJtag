@@ -26,7 +26,7 @@
     <link rel="top" title="gpJtag alpha documentation" href="index.html" />
     <link rel="up" title="中文版" href="index_chs.html" />
     <link rel="next" title="English Version" href="index_enu.html" />
-    <link rel="prev" title="简介" href="intro_chs.html" />
+    <link rel="prev" title="前言" href="intro_chs.html" />
    
    <link rel="stylesheet" type="text/css" media="screen" href="_static/stylesheet.css">
 
@@ -87,7 +87,7 @@
 <div class="section" id="fbs">
 <h3>FBs<a class="headerlink" href="#fbs" title="Permalink to this headline">¶</a></h3>
 <p>每个Function Block包含18个宏单元。每个宏单元用18根线连到FastCONNECT矩阵，
-矩阵反馈3×18根线给功能模块。还有些线是ISP编程线、全局时钟线。</p>
+矩阵提供54根信号线给功能模块。还有些线是ISP编程线、全局时钟线。</p>
 <img alt="_images/xc9500xl_FBs.png" src="_images/xc9500xl_FBs.png" />
 <p>看看细节，最左边是AND阵列（乘积项），“Product Term Allocator”可以自由的选择使用乘积项结果。</p>
 <img alt="_images/xc9500xl_FBs_detail.png" src="_images/xc9500xl_FBs_detail.png" />
@@ -152,13 +152,15 @@ TDI会从最上端给进来，数据移动一位，延迟一段很短的时间�
 <img alt="_images/coolrunner_II_PLA.png" src="_images/coolrunner_II_PLA.png" />
 <p>Xilinx给出的使用例子，乘积项是可以复用的：</p>
 <img alt="_images/coolrunner_II_PLA_example.png" src="_images/coolrunner_II_PLA_example.png" />
+<p>所以可以猜测macrocell有52根乘积项可以用作PTA、PTB、PTC，
+4根乘积项可以用做CTC、CTR、CTS、CTE控制线。</p>
 <p>从Xilinx的技术介绍里可以找到这幅图 <a class="footnote-reference" href="#f2" id="id3">[2]</a> 和 <a class="footnote-reference" href="#f3" id="id4">[3]</a></p>
 <img alt="_images/coolrunner_II_PLA_and_or_logic.png" src="_images/coolrunner_II_PLA_and_or_logic.png" />
 <img alt="_images/coolrunner_II_PLA_detail.png" src="_images/coolrunner_II_PLA_detail.png" />
 <p>从AIM给的信号有A、B、C，红点是配置成短路，X是断路。
 这幅图为了便于说明可编程节点的功能，省掉了一些细节。
 表达式 Y = A&amp;B|C，X = A&amp;B|!C，这里的X、Y可以是给到Macrocell的信号。
-由于这里可以服用A&amp;B的结果，所以节约了资源。</p>
+由于这里可以复用A&amp;B的结果，所以节约了资源。</p>
 <p>关于“可编程节点”的实现可以看看GAL、PAL的实现</p>
 <p>这里附上可编程器件PAL的细节 <a class="footnote-reference" href="#f4" id="id5">[4]</a> ：</p>
 <img alt="_images/PAL.png" src="_images/PAL.png" />
@@ -279,7 +281,7 @@ TDO的延迟为35ns。</p>
 
 
             <hr/>
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="_static/CC-BY-NC-ND-88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.<br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權.
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" src="_static/CC-BY-NC-ND-88x31.png" style="box-shadow:none;border:0;"/></a> <a href="https://www.gnu.org/copyleft/gpl.html"><img alt="GNU General Public License version 3" src="_static/gplv3-77x31.png" style="box-shadow:none;border:0;"/></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>. And license of code is under <a href="https://www.gnu.org/copyleft/gpl.html">GNU General Public License Version 3</a>. <br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權. 涉及到的代码使用 <a href="https://www.gnu.org/copyleft/gpl.html">GNU通用许可证 第三版</a> 授权.
       </section>
     </div>
       <div class="clearer"></div>

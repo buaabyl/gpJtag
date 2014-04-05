@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>简介 &mdash; gpJtag alpha documentation</title>
+    <title>前言 &mdash; gpJtag alpha documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -68,8 +68,12 @@
 <a class="reference internal" href="index_chs.html"><em>目录</em></a> /
 &gt;</p>
 <div class="section" id="id1">
-<h1>简介<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<h1>前言<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
 <p>Jtag是Joint Test Action Group的缩写，简单来说就是“在线测试和边界扫描”。常见的ARM、CPLD、FPGA都带有Jtag接口，可以用于更新固件，测试IC的IO功能。</p>
+<p>本文主要是为了实现一个Jtag调试器，我自己也做过专用的Jtag调试器，但是为每个项目弄一个Jtag适配器太麻烦了，而且感觉是重复的工作，所以有个打算把它弄成通用的。目前开源的OpenOCD算是非常好的一个Jtag工具，但是总觉着用着麻烦，代码过于庞杂，修改起来比较麻烦。</p>
+<p>其实如果只是实现一个Jtag适配器并不是很麻烦，但是要想没做过的人快速理解就比较难了，因为涉及到硬件的实现，所以本文会先介绍和Jtag相关的背景知识和技术，然后给出实现的方法，最后才是实现Jtag适配器。</p>
+<p>目前的思路是先介绍CPLD，一是我用CPLD和FPGA比较多，二是CPLD相对FPGA简单一点，而且CPLD的配置是一项全面但不那么复杂的任务，所以这个切入点比较好。</p>
+<p>由于自己基本只用过xilinx的器件，所以也就优先选择xilinx的产品来分析，而且xilinx的资料相对比较公开。</p>
 <div class="section" id="jtag">
 <h2>Jtag接口<a class="headerlink" href="#jtag" title="Permalink to this headline">¶</a></h2>
 <p>Jtag一般包含4根线</p>
@@ -93,7 +97,7 @@
 
 
             <hr/>
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="_static/CC-BY-NC-ND-88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.<br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權.
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" src="_static/CC-BY-NC-ND-88x31.png" style="box-shadow:none;border:0;"/></a> <a href="https://www.gnu.org/copyleft/gpl.html"><img alt="GNU General Public License version 3" src="_static/gplv3-77x31.png" style="box-shadow:none;border:0;"/></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>. And license of code is under <a href="https://www.gnu.org/copyleft/gpl.html">GNU General Public License Version 3</a>. <br />本著作係採用<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh_TW">創用 CC 姓名標示-非商業性-禁止改作 4.0 國際 授權條款</a>授權. 涉及到的代码使用 <a href="https://www.gnu.org/copyleft/gpl.html">GNU通用许可证 第三版</a> 授权.
       </section>
     </div>
       <div class="clearer"></div>
