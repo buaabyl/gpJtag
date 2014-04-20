@@ -17,5 +17,6 @@
 
     intro_chs
     cpld_chs
+    stm32_usb_chs
 
 

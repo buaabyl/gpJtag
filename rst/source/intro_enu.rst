@@ -10,7 +10,7 @@ Jtag is abbreviation of Joint Test Action Group. Most ICs have jtag interface, s
 
 This book aim at design and implement a Jtag adapter. I have done a Jtag adapter for special device. But It is waste of time build Jtag adapter for every hardware project. So I want to make it to be General Purpose:) As I know OpenOCD is best tool for this purpose, but It aim at use jtag, not build a jtag tool. The code is very large and difficute for hardware engineer, by the way, easier for software engineer.
 
-If you want a Jtag adapter, it is not so difficute, but If you want newbee to known Jtag and modify a Jtag adapter for some special need, it is really hard. Because Jtag is mostly hardware tool. And I will introduct and explain some tech of Jtag and then we build a Jtag adapter. 
+If you want a Jtag adapter, it is not so difficute, but If you want newbee to know Jtag and modify a Jtag adapter for some special need, it is really hard. Because Jtag is mostly hardware tool. And I will introduct and explain some tech of Jtag and then we build a Jtag adapter. 
 
 I thinking the better way is introduct CPLD, cause using CPLD and FPGA for a long time. The second reason is CPLD is easier than FPGA and ARM. An a project to config CPLD is completion work, and not so difficute. So I decided to do so.
 
