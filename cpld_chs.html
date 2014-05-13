@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="gpJtag alpha documentation" href="index.html" />
     <link rel="up" title="中文版" href="index_chs.html" />
-    <link rel="next" title="English Version" href="index_enu.html" />
+    <link rel="next" title="STM32F1的USB介绍" href="stm32_usb_chs.html" />
     <link rel="prev" title="前言" href="intro_chs.html" />
    
    <link rel="stylesheet" type="text/css" media="screen" href="_static/stylesheet.css">
@@ -114,6 +114,8 @@ TDI会从最上端给进来，数据移动一位，延迟一段很短的时间�
 <p>当使用EXTEST就是外部测试的时候，IOB.O会替换“输出D触发器”的值。
 而且当IOB.T有效的时候，测试信号IOB.O会真正的给到PAD。
 只有当UPDATE信号有效的时候，TCK上升沿会将触发器的数据更新到右侧。</p>
+<p>这个是芯片的Die <a class="footnote-reference" href="#xc9536xl-die" id="id1">[6]</a> :</p>
+<img alt="_images/xc9536xl_die.jpg" src="_images/xc9536xl_die.jpg" />
 </div>
 </div>
 <div class="section" id="coolrunner-ii">
@@ -123,7 +125,7 @@ TDI会从最上端给进来，数据移动一位，延迟一段很短的时间�
 有必要了解CoolRunner-II的内部实现机制。因为Xilinx并没有完全公开内部的实现，
 所以以下的结构有部分是猜测的。</p>
 <p>我们来看看最新的CoolRunner-II系列。</p>
-<p>这个是整体的系统结构图 <a class="footnote-reference" href="#f1" id="id1">[1]</a> :</p>
+<p>这个是整体的系统结构图 <a class="footnote-reference" href="#f1" id="id2">[1]</a> :</p>
 <img alt="_images/coolrunner_II_architecture.png" src="_images/coolrunner_II_architecture.png" />
 <p>可以看到有这么几大块：</p>
 <ul class="simple">
@@ -136,8 +138,8 @@ TDI会从最上端给进来，数据移动一位，延迟一段很短的时间�
 </li>
 <li>AIM 全称Advanced Interconnect Matrix（高级互联矩阵），用于FBs的互联</li>
 </ul>
-<div class="section" id="id2">
-<h3>FBs<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id3">
+<h3>FBs<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <p>FB是CPLD可编程的基础，从AIM给到PLA的信号有40路，每一路信号在内部使用的时候做了预处理，
 包含原始信号和反向信号，这样可以很方便的使用信号。
 虽然这种设计看似多了很多反相器，比较浪费，但这么一来就没必要用单独的Macrocell来做反向了。
@@ -154,7 +156,7 @@ TDI会从最上端给进来，数据移动一位，延迟一段很短的时间�
 <img alt="_images/coolrunner_II_PLA_example.png" src="_images/coolrunner_II_PLA_example.png" />
 <p>所以可以猜测macrocell有52根乘积项可以用作PTA、PTB、PTC，
 4根乘积项可以用做CTC、CTR、CTS、CTE控制线。</p>
-<p>从Xilinx的技术介绍里可以找到这幅图 <a class="footnote-reference" href="#f2" id="id3">[2]</a> 和 <a class="footnote-reference" href="#f3" id="id4">[3]</a></p>
+<p>从Xilinx的技术介绍里可以找到这幅图 <a class="footnote-reference" href="#f2" id="id4">[2]</a> 和 <a class="footnote-reference" href="#f3" id="id5">[3]</a></p>
 <img alt="_images/coolrunner_II_PLA_and_or_logic.png" src="_images/coolrunner_II_PLA_and_or_logic.png" />
 <img alt="_images/coolrunner_II_PLA_detail.png" src="_images/coolrunner_II_PLA_detail.png" />
 <p>从AIM给的信号有A、B、C，红点是配置成短路，X是断路。
@@ -162,7 +164,7 @@ TDI会从最上端给进来，数据移动一位，延迟一段很短的时间�
 表达式 Y = A&amp;B|C，X = A&amp;B|!C，这里的X、Y可以是给到Macrocell的信号。
 由于这里可以复用A&amp;B的结果，所以节约了资源。</p>
 <p>关于“可编程节点”的实现可以看看GAL、PAL的实现</p>
-<p>这里附上可编程器件PAL的细节 <a class="footnote-reference" href="#f4" id="id5">[4]</a> ：</p>
+<p>这里附上可编程器件PAL的细节 <a class="footnote-reference" href="#f4" id="id6">[4]</a> ：</p>
 <img alt="_images/PAL.png" src="_images/PAL.png" />
 <p>再看看Lattice的GAL16V8细节：</p>
 <img alt="_images/GAL16V8.png" src="_images/GAL16V8.png" />
@@ -250,29 +252,43 @@ TDO的延迟为35ns。</p>
 </pre></div>
 </div>
 <p>IR的实现是类似的。</p>
+<p>这个是XC2C32A的Die <a class="footnote-reference" href="#xc2c32a-die" id="id7">[5]</a> :</p>
+<img alt="_images/xc2c32a_die.jpg" src="_images/xc2c32a_die.jpg" />
 <p class="rubric">Footnotes</p>
 <table class="docutils footnote" frame="void" id="f1" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>ds090 CoolRunner-II CPLD Family, page 4</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id2">[1]</a></td><td>ds090 CoolRunner-II CPLD Family, page 4</td></tr>
 </tbody>
 </table>
 <table class="docutils footnote" frame="void" id="f2" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id3">[2]</a></td><td>xapp376 Understanding the CoolRunner-II Logic Engine, page 4</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id4">[2]</a></td><td>xapp376 Understanding the CoolRunner-II Logic Engine, page 4</td></tr>
 </tbody>
 </table>
 <table class="docutils footnote" frame="void" id="f3" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id4">[3]</a></td><td>xapp444 CPLD Fitting, Tips and Tricks, page 2</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id5">[3]</a></td><td>xapp444 CPLD Fitting, Tips and Tricks, page 2</td></tr>
 </tbody>
 </table>
 <table class="docutils footnote" frame="void" id="f4" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id5">[4]</a></td><td>Architecture of FPGAs and CPLDs: A Tutorial, page 5</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id6">[4]</a></td><td>Architecture of FPGAs and CPLDs: A Tutorial, page 5</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="xc2c32a-die" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id7">[5]</a></td><td><a class="reference external" href="http://siliconpr0n.org/archive/doku.php?id=azonenberg:xilinx:xc2c32a">http://siliconpr0n.org/archive/doku.php?id=azonenberg:xilinx:xc2c32a</a></td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="xc9536xl-die" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[6]</a></td><td><a class="reference external" href="http://siliconpr0n.org/archive/doku.php?id=mcmaster:xilinx:xc9536xl">http://siliconpr0n.org/archive/doku.php?id=mcmaster:xilinx:xc9536xl</a></td></tr>
 </tbody>
 </table>
 </div>

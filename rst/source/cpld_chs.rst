@@ -67,6 +67,10 @@ TDI会从最上端给进来，数据移动一位，延迟一段很短的时间�
 而且当IOB.T有效的时候，测试信号IOB.O会真正的给到PAD。
 只有当UPDATE信号有效的时候，TCK上升沿会将触发器的数据更新到右侧。
 
+这个是芯片的Die [#xc9536xl_die]_ :
+
+.. image:: images/xc9536xl_die.jpg
+
 CoolRunner-II
 -------------------
 前面简单介绍了一下XC9500XL的Jtag结构，鉴于XC9500XL系列属于淘汰的型号，
@@ -238,7 +242,9 @@ Update-DR
 
 IR的实现是类似的。
 
+这个是XC2C32A的Die [#xc2c32a_die]_ :
 
+.. image:: images/xc2c32a_die.jpg
 
 .. rubric:: Footnotes
 
@@ -246,5 +252,7 @@ IR的实现是类似的。
 .. [#f2] xapp376 Understanding the CoolRunner-II Logic Engine, page 4
 .. [#f3] xapp444 CPLD Fitting, Tips and Tricks, page 2
 .. [#f4] Architecture of FPGAs and CPLDs: A Tutorial, page 5
+.. [#xc2c32a_die] http://siliconpr0n.org/archive/doku.php?id=azonenberg:xilinx:xc2c32a
+.. [#xc9536xl_die] http://siliconpr0n.org/archive/doku.php?id=mcmaster:xilinx:xc9536xl
 
 
