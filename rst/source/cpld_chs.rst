@@ -246,6 +246,10 @@ IR的实现是类似的。
 
 .. image:: images/xc2c32a_die.jpg
 
+对比官方的手册简单分析一下Die :
+
+.. image:: images/xc2c32a_die_analysis.png
+
 .. rubric:: Footnotes
 
 .. [#f1] ds090 CoolRunner-II CPLD Family, page 4
