@@ -18,7 +18,7 @@ And the reason I choose xilinx's cpld, is I have used xilinx device only, and th
 
   
 Jtag Interface
---------
+--------------
 
 Normaly Jtag have 4-wires
 

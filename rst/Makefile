@@ -54,9 +54,11 @@ html:
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 	@echo Publish to top directory...
+	@echo Clean top directory: _images, _static, *.html
 	@rm -rf ../_images
 	@rm -rf ../_static
 	@rm -rf ../*.html
+	@echo Copy files to top directory...
 	@cp -r build/html/_images ..
 	@cp -r build/html/_static ..
 	@cp -r build/html/*.html ..
